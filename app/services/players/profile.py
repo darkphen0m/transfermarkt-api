@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 
 from app.services.base import TransfermarktBase
@@ -66,17 +67,21 @@ class TransfermarktPlayerProfile(TransfermarktBase):
         self.response["fullName"] = self.get_text_by_xpath(Players.Profile.FULL_NAME)
         self.response["nameInHomeCountry"] = self.get_text_by_xpath(Players.Profile.NAME_IN_HOME_COUNTRY)
         self.response["imageUrl"] = self.get_text_by_xpath(Players.Profile.IMAGE_URL)
-        self.response["dateOfBirth"] = safe_regex(
-            self.get_text_by_xpath(Players.Profile.DATE_OF_BIRTH_AGE),
+        date_of_birth = safe_regex(
+            self.get_text_by_xpath(Players.Profile.DATE_OF_BIRTH_AGE, join_str=" "),
             REGEX_DOB_AGE,
             "dob",
         )
+        if date_of_birth and re.match(r"^\d{1,2}[./]\d{1,2}[./]\d{4}$", date_of_birth):
+            day, month, year = re.split(r"[./]", date_of_birth)
+            date_of_birth = f"{year}-{int(month):02d}-{int(day):02d}"
+        self.response["dateOfBirth"] = date_of_birth
         self.response["placeOfBirth"] = {
             "city": self.get_text_by_xpath(Players.Profile.PLACE_OF_BIRTH_CITY),
             "country": self.get_text_by_xpath(Players.Profile.PLACE_OF_BIRTH_COUNTRY),
         }
         self.response["age"] = safe_regex(
-            self.get_text_by_xpath(Players.Profile.DATE_OF_BIRTH_AGE),
+            self.get_text_by_xpath(Players.Profile.DATE_OF_BIRTH_AGE, join_str=" "),
             REGEX_DOB_AGE,
             "age",
         )
